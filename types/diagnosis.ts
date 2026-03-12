@@ -106,3 +106,10 @@ export interface DiagnosisResult {
   averageMultiple: number;
   topPercentile: number;
 }
+
+export interface DiagnosisFeedback {
+  summary: string;
+  nextActions: string[];
+  aiAdvice: string;
+  shortCatch: string;
+}

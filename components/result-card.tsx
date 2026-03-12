@@ -4,13 +4,7 @@ import { forwardRef } from 'react';
 import { DiagnosisResult } from '@/types/diagnosis';
 import MarketRadarChart from './radar-chart';
 import { JAPAN_AVERAGE_INCOME, RANK_THRESHOLDS } from '@/constants/scoring';
-
-function getAIImprovementTips(score: number): string[] {
-  if (score < 40) return ['AIツールを日常業務に取り入れる', '代替されにくいスキルを1つ磨く', 'ChatGPT等で業務効率化を試す'];
-  if (score < 60) return ['業務の自動化・ワークフロー化を試す', 'AI活用の幅を広げる'];
-  if (score < 80) return ['AIを使った成果物・プロダクトを作る', '伸びる分野のトレンドを追う'];
-  return ['AI×専門領域で希少性を高める'];
-}
+import { generateFeedback } from '@/utils/generate-feedback';
 
 interface Props {
   result: DiagnosisResult;
@@ -58,6 +52,7 @@ const ResultCard = forwardRef<HTMLDivElement, Props>(({ result }, ref) => {
   const rankLabel = RANK_THRESHOLDS.find(r => r.rank === marketRank)?.label ?? '';
   const rankColor = RANK_COLORS[marketRank] ?? 'text-white';
   const rankGlow = RANK_GLOW[marketRank] ?? '';
+  const feedback = generateFeedback(result);
 
   return (
     <div
@@ -71,7 +66,7 @@ const ResultCard = forwardRef<HTMLDivElement, Props>(({ result }, ref) => {
         <div className="text-xs text-slate-500">市場価値診断</div>
       </div>
 
-      {/* Battle Power + Rank */}
+      {/* 1. Battle Power + Rank */}
       <div className="text-center space-y-2">
         <div className="text-slate-400 text-xs tracking-widest">BATTLE POWER</div>
         <div className="text-6xl font-bold text-cyan-400 tabular-nums" style={{ textShadow: '0 0 20px #00d4ff, 0 0 40px #00d4ff' }}>
@@ -83,7 +78,7 @@ const ResultCard = forwardRef<HTMLDivElement, Props>(({ result }, ref) => {
         <div className="text-slate-400 text-sm">{rankLabel}</div>
       </div>
 
-      {/* Estimated Income */}
+      {/* 2. Estimated Income */}
       <div className="bg-[#040e1a] border border-cyan-900 rounded-xl p-4 text-center space-y-3">
         <div className="text-xs text-slate-500 tracking-widest">想定市場年収</div>
         <div className="text-4xl font-bold text-white">
@@ -94,7 +89,7 @@ const ResultCard = forwardRef<HTMLDivElement, Props>(({ result }, ref) => {
           レンジ: {estimatedIncomeRange.min.toLocaleString()}万〜{estimatedIncomeRange.max.toLocaleString()}万円
         </div>
 
-        {/* ① 平均との差を強調 */}
+        {/* 平均との差を強調 */}
         <div className="grid grid-cols-3 gap-2 items-center pt-1">
           <div className="text-center">
             <div className="text-xs text-slate-500 mb-1">日本平均</div>
@@ -109,22 +104,21 @@ const ResultCard = forwardRef<HTMLDivElement, Props>(({ result }, ref) => {
           </div>
         </div>
 
-        {/* ② 上位%のゲーム化 */}
+        {/* 上位%のゲーム化 */}
         <div className="bg-[#020d18] border border-cyan-800 rounded-lg py-2 px-3 text-center">
           <div className="text-xs text-slate-500">市場価値ランキング</div>
           <div className="text-xl font-black text-cyan-400">上位 {topPercentile}% クラス</div>
         </div>
       </div>
 
-      {/* Type */}
+      {/* 3. Type + AI耐性 */}
       <div className="bg-[#040e1a] border border-slate-800 rounded-xl p-3 text-center">
         <div className="text-xs text-slate-500 mb-1">市場価値タイプ</div>
         <div className="text-base font-bold text-purple-400">{marketType}</div>
       </div>
 
-      {/* ③ AI耐性（改善ヒント付き） */}
-      <div className="bg-[#040e1a] border border-slate-800 rounded-xl p-4 space-y-3">
-        <div className="flex items-center justify-between">
+      <div className="bg-[#040e1a] border border-slate-800 rounded-xl p-3">
+        <div className="flex items-center justify-between mb-1">
           <div>
             <div className="text-xs text-slate-500">AI耐性スコア</div>
             <div className="text-2xl font-bold text-green-400">{aiResilienceScore} <span className="text-sm text-slate-500">/ 100</span></div>
@@ -136,24 +130,42 @@ const ResultCard = forwardRef<HTMLDivElement, Props>(({ result }, ref) => {
             'bg-red-900 text-red-400'
           }`}>{aiResilienceLabel}</div>
         </div>
-        <div className="space-y-1">
-          <div className="text-xs text-slate-500">▸ 改善アクション</div>
-          {getAIImprovementTips(aiResilienceScore).map((tip, i) => (
-            <div key={i} className="text-xs text-slate-300 flex items-start gap-1.5">
-              <span className="text-green-500 mt-0.5">✓</span>
-              <span>{tip}</span>
-            </div>
-          ))}
-        </div>
       </div>
 
-      {/* Radar Chart */}
+      {/* 4. 6軸グラフ */}
       <div className="bg-[#040e1a] border border-slate-800 rounded-xl p-3">
         <div className="text-xs text-slate-500 text-center mb-2">6軸スコア</div>
         <MarketRadarChart axisScores={axisScores} />
       </div>
 
-      {/* Strengths */}
+      {/* 5. 総評コメント */}
+      <div className="bg-[#040e1a] border border-cyan-900 rounded-xl p-4 space-y-3">
+        <div className="text-xs text-cyan-500 tracking-widest">◆ 総評</div>
+        {/* 一言まとめバッジ */}
+        <div className="inline-block bg-cyan-950 border border-cyan-700 text-cyan-300 text-xs px-3 py-1 rounded-full">
+          {feedback.shortCatch}
+        </div>
+        <p className="text-sm text-slate-200 leading-relaxed">{feedback.summary}</p>
+      </div>
+
+      {/* 6. 次に伸ばすべきポイント */}
+      <div className="bg-[#040e1a] border border-slate-800 rounded-xl p-4 space-y-2">
+        <div className="text-xs text-cyan-500 tracking-widest">◆ 次に伸ばすべきポイント</div>
+        {feedback.nextActions.map((action, i) => (
+          <div key={i} className="flex items-start gap-2 text-sm">
+            <span className="text-cyan-400 font-bold mt-0.5">{i + 1}.</span>
+            <span className="text-slate-200">{action}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* 7. AI時代のアドバイス */}
+      <div className="bg-[#040e1a] border border-green-900 rounded-xl p-4 space-y-2">
+        <div className="text-xs text-green-500 tracking-widest">◆ AI時代のアドバイス</div>
+        <p className="text-sm text-slate-200 leading-relaxed">{feedback.aiAdvice}</p>
+      </div>
+
+      {/* 8. 強みTOP3 */}
       <div className="space-y-2">
         <div className="text-xs text-cyan-500 tracking-widest">◆ 強みTOP3</div>
         {strengths.map((s, i) => (
@@ -164,7 +176,7 @@ const ResultCard = forwardRef<HTMLDivElement, Props>(({ result }, ref) => {
         ))}
       </div>
 
-      {/* Improvements */}
+      {/* 9. 改善ポイントTOP3 */}
       <div className="space-y-2">
         <div className="text-xs text-orange-500 tracking-widest">◆ 改善ポイントTOP3</div>
         {improvements.map((s, i) => (
@@ -175,7 +187,7 @@ const ResultCard = forwardRef<HTMLDivElement, Props>(({ result }, ref) => {
         ))}
       </div>
 
-      {/* Growth Potential */}
+      {/* 10. 伸びしろ年収 */}
       <div className="bg-[#040e1a] border border-purple-900 rounded-xl p-4 text-center">
         <div className="text-xs text-slate-500 mb-1">伸びしろ年収（ポテンシャル上限）</div>
         <div className="text-2xl font-bold text-purple-400">{growthPotentialIncome.toLocaleString()}万円</div>
