@@ -119,11 +119,29 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    box-sizing: border-box;
   }
   body {
     @apply bg-background text-foreground;
+    background-color: #020d18;
+    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
   html {
     @apply font-sans;
   }
+}
+
+/* Slider styling */
+[data-slot="slider-track"] {
+  background-color: #1e3a4a;
+}
+
+[data-slot="slider-range"] {
+  background-color: #00d4ff;
+}
+
+[data-slot="slider-thumb"] {
+  border-color: #00d4ff;
+  background-color: #020d18;
 }
