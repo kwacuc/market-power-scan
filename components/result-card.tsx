@@ -3,7 +3,14 @@
 import { forwardRef } from 'react';
 import { DiagnosisResult } from '@/types/diagnosis';
 import MarketRadarChart from './radar-chart';
-import { RANK_THRESHOLDS } from '@/constants/scoring';
+import { JAPAN_AVERAGE_INCOME, RANK_THRESHOLDS } from '@/constants/scoring';
+
+function getAIImprovementTips(score: number): string[] {
+  if (score < 40) return ['AIツールを日常業務に取り入れる', '代替されにくいスキルを1つ磨く', 'ChatGPT等で業務効率化を試す'];
+  if (score < 60) return ['業務の自動化・ワークフロー化を試す', 'AI活用の幅を広げる'];
+  if (score < 80) return ['AIを使った成果物・プロダクトを作る', '伸びる分野のトレンドを追う'];
+  return ['AI×専門領域で希少性を高める'];
+}
 
 interface Props {
   result: DiagnosisResult;
@@ -77,7 +84,7 @@ const ResultCard = forwardRef<HTMLDivElement, Props>(({ result }, ref) => {
       </div>
 
       {/* Estimated Income */}
-      <div className="bg-[#040e1a] border border-cyan-900 rounded-xl p-4 text-center space-y-1">
+      <div className="bg-[#040e1a] border border-cyan-900 rounded-xl p-4 text-center space-y-3">
         <div className="text-xs text-slate-500 tracking-widest">想定市場年収</div>
         <div className="text-4xl font-bold text-white">
           <span className="text-cyan-400">{estimatedAnnualIncome.toLocaleString()}</span>
@@ -86,22 +93,57 @@ const ResultCard = forwardRef<HTMLDivElement, Props>(({ result }, ref) => {
         <div className="text-xs text-slate-500">
           レンジ: {estimatedIncomeRange.min.toLocaleString()}万〜{estimatedIncomeRange.max.toLocaleString()}万円
         </div>
-        <div className="flex justify-center gap-4 mt-2 text-xs">
-          <span className="text-slate-400">日本平均の <span className="text-cyan-400 font-bold">{averageMultiple}倍</span></span>
-          <span className="text-slate-400">上位 <span className="text-cyan-400 font-bold">{topPercentile}%</span> クラス</span>
+
+        {/* ① 平均との差を強調 */}
+        <div className="grid grid-cols-3 gap-2 items-center pt-1">
+          <div className="text-center">
+            <div className="text-xs text-slate-500 mb-1">日本平均</div>
+            <div className="text-lg font-bold text-slate-400">{JAPAN_AVERAGE_INCOME}<span className="text-xs ml-0.5">万</span></div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-black text-cyan-400" style={{ textShadow: '0 0 10px #00d4ff' }}>{averageMultiple}倍</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-slate-500 mb-1">あなた</div>
+            <div className="text-lg font-bold text-cyan-400">{estimatedAnnualIncome.toLocaleString()}<span className="text-xs ml-0.5">万</span></div>
+          </div>
+        </div>
+
+        {/* ② 上位%のゲーム化 */}
+        <div className="bg-[#020d18] border border-cyan-800 rounded-lg py-2 px-3 text-center">
+          <div className="text-xs text-slate-500">市場価値ランキング</div>
+          <div className="text-xl font-black text-cyan-400">上位 {topPercentile}% クラス</div>
         </div>
       </div>
 
-      {/* Type + AI */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-[#040e1a] border border-slate-800 rounded-xl p-3 text-center">
-          <div className="text-xs text-slate-500 mb-1">市場価値タイプ</div>
-          <div className="text-sm font-bold text-purple-400">{marketType}</div>
+      {/* Type */}
+      <div className="bg-[#040e1a] border border-slate-800 rounded-xl p-3 text-center">
+        <div className="text-xs text-slate-500 mb-1">市場価値タイプ</div>
+        <div className="text-base font-bold text-purple-400">{marketType}</div>
+      </div>
+
+      {/* ③ AI耐性（改善ヒント付き） */}
+      <div className="bg-[#040e1a] border border-slate-800 rounded-xl p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xs text-slate-500">AI耐性スコア</div>
+            <div className="text-2xl font-bold text-green-400">{aiResilienceScore} <span className="text-sm text-slate-500">/ 100</span></div>
+          </div>
+          <div className={`text-sm font-bold px-3 py-1 rounded-full ${
+            aiResilienceScore >= 80 ? 'bg-green-900 text-green-400' :
+            aiResilienceScore >= 60 ? 'bg-cyan-900 text-cyan-400' :
+            aiResilienceScore >= 40 ? 'bg-yellow-900 text-yellow-400' :
+            'bg-red-900 text-red-400'
+          }`}>{aiResilienceLabel}</div>
         </div>
-        <div className="bg-[#040e1a] border border-slate-800 rounded-xl p-3 text-center">
-          <div className="text-xs text-slate-500 mb-1">AI耐性スコア</div>
-          <div className="text-sm font-bold text-green-400">{aiResilienceScore} / 100</div>
-          <div className="text-xs text-slate-500">{aiResilienceLabel}</div>
+        <div className="space-y-1">
+          <div className="text-xs text-slate-500">▸ 改善アクション</div>
+          {getAIImprovementTips(aiResilienceScore).map((tip, i) => (
+            <div key={i} className="text-xs text-slate-300 flex items-start gap-1.5">
+              <span className="text-green-500 mt-0.5">✓</span>
+              <span>{tip}</span>
+            </div>
+          ))}
         </div>
       </div>
 
